@@ -744,3 +744,14 @@ TaskUtilsSNC.prototype = {
 
 	type: 'TaskUtilsSNC'
 };
+
+/*
+
+Change Request
+→ TaskUtilsSNC runs
+→ Sees change_request in com.snc.task.principal_class_filter
+→ Calls PrincipalClass().getPrincipalClasses()
+→ Builds sys_class_nameIN...
+→ CI lookup only shows those configured principal classes
+
+*/
