@@ -5,7 +5,7 @@ function onSubmit() {
     // alert(costCenterNumber);
 
 
-	var serviceNowGroup = g_form.getValue('servicenow_group');
+	var supportGroup = g_form.getValue('support_group');
 	var supportDl = g_form.getValue('support_dl');
     var itSupportManager = g_form.getValue('it_support_manager');
     var preferDest = g_form.getValue('preferred_destination');
@@ -17,7 +17,7 @@ function onSubmit() {
     var ccManagerflag = g_form.getValue("cost_center_manager_is_active");
 
 
-    if (costCenter == '' || itSupportManager == '' || costCenterManager == '' || costCenterManager == '86639313dba82810efd51fe968961995' || appOwnerflag == 'false' || ccManagerflag == 'false' || costCenterNumber.startsWith('9') || serviceNowGroup == '' || supportDl == '' || appOwner == '') {
+    if (costCenter == '' || itSupportManager == '' || costCenterManager == '' || costCenterManager == '86639313dba82810efd51fe968961995' || appOwnerflag == 'false' || ccManagerflag == 'false' || costCenterNumber.startsWith('9') || supportGroup == '' || supportDl == '' || appOwner == '') {
 
 
         if (costCenter == '') {
@@ -32,8 +32,7 @@ function onSubmit() {
 
             }).then(function(ans) {
                 if (ans.label == "OK") {
-                    //alert('party');
-
+					//alert('party')
                 }
             });
 
@@ -119,10 +118,10 @@ function onSubmit() {
 
                 }
             });
-        } else if (serviceNowGroup == '') {
+        } else if (supportGroup == '') {
             spModal.open({
-                'title': 'ServiceNow Group must be updated',
-                'message': 'ServiceNow Group must be updated in AppLab before submitting a NextGen Cloud Intake.  Please correct within APM# and re-submit after all APM# fields are finalized.',
+                'title': 'Support Group must be updated',
+                'message': 'Support Group must be updated in AppLab before submitting a NextGen Cloud Intake.  Please correct within APM# and re-submit after all APM# fields are finalized.',
                 'buttons': [{
                     label: 'OK',
                     primary: true
