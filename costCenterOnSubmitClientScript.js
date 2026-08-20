@@ -57,7 +57,7 @@ function onSubmit() {
 
             spModal.open({
                 'title': 'Cost Center must be updated',
-                'message': 'An invalid selected Cost Center is associated with your APM.  Please update to a valid cost center in order to submit your NextGen Cloud Intake. For more information, visit the <a href="https://confluence.elevancehealth.com/pages/viewpage.action?pageId=1857990934&spaceKey=ENTCLOUD&title=Cloud%2BIntake%2BRequest%2BCIR%2B%E2%80%93%2BCost%2BCenter%2BValidation%2BError%2BHandling" target="_blank">NextGen Cloud Intake – Cost Center Validation Error Handling</a> page.',
+                'message': 'An invalid selected Cost Center is associated with your APM. Cost Center Manager is either blank or a Guest. Please update to a valid cost center in order to submit your NextGen Cloud Intake. For more information, visit the <a href="https://confluence.elevancehealth.com/pages/viewpage.action?pageId=1857990934&spaceKey=ENTCLOUD&title=Cloud%2BIntake%2BRequest%2BCIR%2B%E2%80%93%2BCost%2BCenter%2BValidation%2BError%2BHandling" target="_blank">NextGen Cloud Intake – Cost Center Validation Error Handling</a> page.',
                 'buttons': [{
                     label: 'OK',
                     primary: true
