@@ -1,0 +1,287 @@
+Yes. Here’s the implementation plan we worked through, in the order we actually built it.
+
+1. **Move Firewall Request into the Central IT Request order guide**
+
+   * Added the Firewall Request item to the Central IT Request order guide.
+   * Confirmed **Cascade Variables** was enabled on the order guide.
+   * Added a matching `short_description` variable to the Firewall Request item so the order-guide Short Description would cascade into the RITM.
+   * Made Short Description required.
+
+2. **Preserve the existing Firewall Request intake**
+
+   * Kept the existing Firewall Request variables.
+   * Kept the Firewall Request Details MRVS with the existing firewall rule fields.
+   * Kept Business Reason, Additional Comments, Requested For, and other existing request data.
+
+3. **Replace the approval-driven process with Firewall Team review**
+
+   * Adjusted the fulfillment so submission creates a Firewall Review catalog task instead of relying on the prior approval path.
+   * Assigned the SCTASK to the Firewall/Networking team.
+   * Kept the SCTASK open while the reviewer evaluates the request.
+
+4. **Allow review/update before conversion**
+
+   * The reviewer can review and update request details and attachments before creating the Change.
+   * The SCTASK remains the working record during that review period.
+
+5. **Create the UI Action on `sc_task`**
+
+   * Created the button:
+
+     ```text
+     Create Firewall Change Request
+     ```
+   * Added it to the Firewall Review catalog task.
+   * Confirmed it was available in Service Operations Workspace.
+
+6. **Get the parent RITM from the SCTASK**
+
+   * Used `current.request_item` to retrieve the Firewall Request RITM.
+   * Corrected the initial RITM lookup logic so it directly loads `sc_req_item`.
+
+   Core lookup:
+
+   ```javascript
+   var ritmSysId = current.getValue('request_item');
+
+   var ritmGR = new GlideRecord('sc_req_item');
+   if (!ritmSysId || !ritmGR.get(ritmSysId)) {
+       gs.addErrorMessage('Unable to locate the Firewall Request RITM.');
+       action.setRedirectURL(current);
+       return;
+   }
+   ```
+
+7. **Create a Normal Change Request**
+
+   * The UI Action initializes a new `change_request`.
+   * Sets:
+
+     ```text
+     Type = Normal
+     Assigned To = user who clicked the button
+     ```
+   * Used:
+
+     ```javascript
+     changeGR.setValue('assigned_to', gs.getUserID());
+     ```
+
+8. **Map Firewall Request fields into the Change**
+
+   * Cascaded Firewall Short Description into the Change.
+   * Mapped Business Reason into the Change Description.
+   * Mapped Additional Comments into Work Notes.
+   * Added source traceability showing the originating RITM/SCTASK.
+
+9. **Transfer the Firewall MRVS into Implementation Plan**
+
+   * Initially tried reading the MRVS directly from:
+
+     ```javascript
+     ritmGR.variables.firewall_request_details
+     ```
+
+     but that did not work reliably.
+   * We then inspected:
+
+     ```text
+     sc_multi_row_question_answer
+     ```
+   * Used:
+
+     ```text
+     parent_id = RITM sys_id
+     variable_set.internal_name = firewall_request_details
+     row_index = row grouping
+     item_option_new.name = variable internal name
+     ```
+   * Built each Firewall Rule into a readable block in `implementation_plan`.
+
+   Example result:
+
+   ```text
+   Firewall Rules
+
+   Firewall Rule 1
+   Type: Add Rule
+   Source IP or Network: ...
+   Destination URL, IP or Network: ...
+   Application: ...
+   Protocol: ...
+   Port(s): ...
+   Start Date: ...
+   End Date: ...
+   ```
+
+10. **Copy attachments**
+
+    * Copied attachments from both:
+
+      * Firewall RITM
+      * Firewall SCTASK
+    * Into the newly created Change Request using `GlideSysAttachment.copy()`.
+
+11. **Create a permanent SCTASK → Change relationship**
+
+    * Added a custom reference field on `sc_task`:
+
+      ```text
+      Label: Change Request
+      Field: u_change_request
+      Reference: change_request
+      ```
+    * When the Change is created, the UI Action writes the new Change sys_id into:
+
+      ```javascript
+      current.setValue('u_change_request', changeSysId);
+      current.update();
+      ```
+
+12. **Keep the SCTASK open after Change creation**
+
+    * Creating the Change does not close the Firewall SCTASK.
+    * The task stays open while the Change goes through its normal lifecycle.
+
+13. **Let standard Change Management handle approvals**
+
+    * We did not build custom CAB/security approval logic into the UI Action.
+    * The new Change follows the organization’s existing Change Management workflow.
+    * CAB, Security, and other approvals occur normally there.
+    * Fields not collected on the intake form can be completed manually by the Firewall Team after conversion.
+
+14. **Auto-close the Firewall SCTASK when the Change closes**
+
+    * Created a Business Rule on:
+
+      ```text
+      Table: Change Request
+      When: after
+      Update: true
+      Condition: State changes to Closed
+      ```
+    * The Business Rule queries `sc_task` where:
+
+      ```text
+      u_change_request = current Change sys_id
+      ```
+    * It sets the linked Firewall SCTASK to Closed Complete and adds an automatic closure work note.
+
+15. **End-to-end testing**
+
+    * Submit a fresh Firewall Request through Central IT Request.
+    * Verify the Firewall SCTASK is created.
+    * Verify Short Description cascades.
+    * Verify MRVS/business details are present.
+    * Click **Create Firewall Change Request**.
+    * Verify:
+
+      * Normal Change created
+      * assigned owner is the reviewer
+      * Description populated
+      * Implementation Plan populated
+      * Work Notes populated
+      * attachments copied
+      * SCTASK links to Change
+    * Progress the Change through the normal workflow.
+    * Close the Change.
+    * Verify the linked Firewall SCTASK automatically closes.
+
+That was the complete implementation path we built for the story.
+
+
+
+
+Yes. You want something closer to an **implementation summary**: enough technical detail that another developer understands what was built, including how the records are connected, but not every individual line of code.
+
+I would document it like this:
+
+### Firewall Request → Change Request Implementation Plan
+
+1. **Updated the Firewall Request intake**
+
+   * Added the Firewall Request catalog item to the **Central IT Request** order guide.
+   * Added/required Short Description and configured it to cascade from the order guide to the Firewall Request.
+   * Retained the existing Firewall Request fields and Firewall Rule MRVS.
+
+2. **Updated the fulfillment process**
+
+   * Replaced the existing approval process with a **Firewall Review Catalog Task** assigned to the Firewall Team.
+   * The catalog task remains open while the Firewall Team reviews the request and prepares it for conversion to a Change Request.
+
+3. **Created the Change Request UI Action**
+
+   * Added a **Create Firewall Change Request** UI Action to the Firewall Review SCTASK.
+   * The action retrieves the parent RITM through the SCTASK's `request_item` reference.
+   * It creates a **Normal Change Request** and assigns it to the user who initiated the conversion.
+
+4. **Mapped Firewall Request data to the Change**
+
+   * Short Description and Business Reason are transferred to the appropriate Change fields.
+   * Additional Comments are transferred to Change Work Notes.
+   * Firewall Rule MRVS records are retrieved from `sc_multi_row_question_answer`, grouped by `row_index`, and formatted into the Change **Implementation Plan**.
+   * Attachments from both the RITM and SCTASK are copied to the Change Request.
+
+5. **Linked the Firewall records to the Change**
+
+   * Created a custom **Change Request** reference field (`u_change_request`) on `sc_task`.
+   * After creating the Change, its `sys_id` is written to `sc_task.u_change_request`.
+   * This provides the permanent relationship:
+
+     ```text
+     REQ
+      ↓
+     RITM
+      ↓
+     Firewall SCTASK
+      ↓ u_change_request
+     CHG
+     ```
+   * The Change also receives Work Notes identifying the originating RITM and SCTASK for traceability.
+
+6. **Used the standard Change Management process**
+
+   * Once created, the Change proceeds through the organization's normal Change workflow, including required CAB/Security approvals.
+   * Any required Change fields that were not collected during intake can be completed by the Firewall Team on the Change.
+
+7. **Automated closure of the Firewall task**
+
+   * Created an **after-update Business Rule on `change_request`** that runs when the Change reaches **Closed**.
+   * The Business Rule queries `sc_task` using:
+
+     ```text
+     u_change_request = Change sys_id
+     ```
+   * The associated Firewall SCTASK is automatically moved to **Closed Complete** and receives a closure Work Note.
+   * Standard request completion behavior/notifications can then continue.
+
+### In short
+
+The core architecture we built was:
+
+```text
+Central IT Request
+        ↓
+Firewall RITM
+        ↓
+Firewall Review SCTASK
+        ↓
+"Create Firewall Change Request"
+        ↓
+Normal CHG
+        ↓
+Standard Change/CAB Process
+        ↓
+CHG Closed
+        ↓
+Business Rule finds linked SCTASK
+        ↓
+Firewall SCTASK Closed Complete
+```
+
+The key to the whole relationship is the custom `u_change_request` reference on the 
+SCTASK. **The UI Action creates and links the records going forward; the Business Rule 
+uses that same link to find and close the correct task going backward.**
+
+That's probably the right level of detail for an implementation plan/update-set 
+documentation or story work notes.
