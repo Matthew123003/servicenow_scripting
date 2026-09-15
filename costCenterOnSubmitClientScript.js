@@ -1,12 +1,17 @@
 function onSubmit() {
-   
+
     var costCenter = g_form.getValue('cost_center_org');
     var costCenterNumber = g_form.getDisplayValue('cost_center_org');
     // alert(costCenterNumber);
 
 
-	var supportGroup = g_form.getValue('support_group');
-	var supportDl = g_form.getValue('support_dl');
+    // Support Group DL validation
+    var supportGroupDL = g_form.getValue('support_dl').trim();
+    var dlPattern = /^dl-[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.com$/i;
+    var invalidSupportDL = supportGroupDL != '' && !dlPattern.test(supportGroupDL);
+
+    var supportGroup = g_form.getValue('support_group');
+    var supportDl = g_form.getValue('support_dl');
     var itSupportManager = g_form.getValue('it_support_manager');
     var preferDest = g_form.getValue('preferred_destination');
     var costCenterManager = g_form.getValue('cost_center_owner');
@@ -17,7 +22,7 @@ function onSubmit() {
     var ccManagerflag = g_form.getValue("cost_center_manager_is_active");
 
 
-    if (costCenter == '' || itSupportManager == '' || costCenterManager == '' || costCenterManager == '86639313dba82810efd51fe968961995' || appOwnerflag == 'false' || ccManagerflag == 'false' || costCenterNumber.startsWith('9') || supportGroup == '' || supportDl == '' || appOwner == '') {
+    if (costCenter == '' || itSupportManager == '' || costCenterManager == '' || costCenterManager == '86639313dba82810efd51fe968961995' || appOwnerflag == 'false' || ccManagerflag == 'false' || costCenterNumber.startsWith('9') || supportGroup == '' || supportDl == '' || appOwner == '' || invalidSupportDL) {
 
 
         if (costCenter == '') {
@@ -32,7 +37,7 @@ function onSubmit() {
 
             }).then(function(ans) {
                 if (ans.label == "OK") {
-					//alert('party')
+                    //alert('party')
                 }
             });
 
@@ -136,8 +141,8 @@ function onSubmit() {
             });
         } else if (supportDl == '') {
             spModal.open({
-                'title': 'Support DL must be updated',
-                'message': 'Support DL must be updated in AppLab before submitting a NextGen Cloud Intake. Support DL needs to be in the correct format as well when updated ( dl-*****@******.com ) Please correct within APM# and re-submit after all APM# fields are finalized.',
+                'title': 'Support Group DL must be updated',
+                'message': 'Support Group DL must be updated in AppLab before submitting a NextGen Cloud Intake. Support DL needs to be in the correct format as well when updated ( dl-*****@******.com ) Please correct within APM# and re-submit after all APM# fields are finalized.',
                 'buttons': [{
                     label: 'OK',
                     primary: true
@@ -166,8 +171,23 @@ function onSubmit() {
 
                 }
             });
-        }
+        } else if (invalidSupportDL) {
 
+            spModal.open({
+                'title': 'Support Group DL must be updated',
+                'message': 'Support Group DL must be in the format dl-name@domain.com. Please correct the Support Group DL in AppLab before submitting a NextGen Cloud Intake.',
+                'buttons': [{
+                    label: 'OK',
+                    primary: true
+                }],
+                'backdrop': 'static',
+
+            }).then(function(ans) {
+                if (ans.label == "OK") {
+                    // User acknowledged validation message
+                }
+            });
+        }
     } else {
         flag = true;
     }
