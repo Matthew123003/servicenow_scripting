@@ -110,3 +110,11 @@ def main():
  
 if __name__ == "__main__":
     main()
+
+
+# Discover what variables the template expects (no RITM created)
+python create_ritm.py --config config.json --values values.json --validate-only
+ 
+# Create the RITM
+python create_ritm.py --config config.json --values values.json
+
